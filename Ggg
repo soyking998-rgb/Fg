@@ -1,0 +1,105 @@
+-- ALL-IN-ONE HEAD BOOST SCRIPT
+-- Drop this Script into ServerScriptService
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Create RemoteEvent
+local boostEvent = Instance.new("RemoteEvent")
+boostEvent.Name = "HeadBoostEvent"
+boostEvent.Parent = ReplicatedStorage
+
+-- Player boost value
+Players.PlayerAdded:Connect(function(player)
+	local boost = Instance.new("NumberValue")
+	boost.Name = "BoostPower"
+	boost.Value = 150
+	boost.Parent = player
+
+	player.CharacterAdded:Connect(function(character)
+		local head = character:WaitForChild("Head")
+
+		head.Touched:Connect(function(hit)
+			local otherChar = hit.Parent
+			if not otherChar then return end
+
+			local otherHumanoid = otherChar:FindFirstChild("Humanoid")
+			local otherRoot = otherChar:FindFirstChild("HumanoidRootPart")
+			if not otherHumanoid or not otherRoot then return end
+
+			local otherPlayer = Players:GetPlayerFromCharacter(otherChar)
+			if not otherPlayer then return end
+
+			local power = otherPlayer:FindFirstChild("BoostPower")
+			if not power then return end
+
+			otherRoot.AssemblyLinearVelocity =
+				Vector3.new(0, power.Value, 0)
+		end)
+	end)
+end)
+
+-- GUI + LocalScript creation
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Wait()
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "BoostGui"
+	gui.ResetOnSpawn = false
+	gui.Parent = player:WaitForChild("PlayerGui")
+
+	local frame = Instance.new("Frame", gui)
+	frame.Size = UDim2.fromScale(0.4, 0.25)
+	frame.Position = UDim2.fromScale(0.3, 0.65)
+	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.fromScale(1, 0.4)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.new(1,1,1)
+	label.TextScaled = true
+	label.Text = "Boost Power"
+
+	local inc = Instance.new("TextButton", frame)
+	inc.Position = UDim2.fromScale(0.55, 0.45)
+	inc.Size = UDim2.fromScale(0.4, 0.4)
+	inc.Text = "+"
+	inc.TextScaled = true
+
+	local dec = Instance.new("TextButton", frame)
+	dec.Position = UDim2.fromScale(0.05, 0.45)
+	dec.Size = UDim2.fromScale(0.4, 0.4)
+	dec.Text = "-"
+	dec.TextScaled = true
+
+	local localScript = Instance.new("LocalScript", frame)
+
+	localScript.Source = [[
+		local player = game.Players.LocalPlayer
+		local power = player:WaitForChild("BoostPower")
+
+		local label = script.Parent.TextLabel
+		local inc = script.Parent:FindFirstChild("+", true)
+		local dec = script.Parent:FindFirstChild("-", true)
+
+		local MIN = 50
+		local MAX = 300
+		local STEP = 25
+
+		local function update()
+			label.Text = "Boost Power: " .. power.Value
+		end
+
+		inc.MouseButton1Click:Connect(function()
+			power.Value = math.clamp(power.Value + STEP, MIN, MAX)
+			update()
+		end)
+
+		dec.MouseButton1Click:Connect(function()
+			power.Value = math.clamp(power.Value - STEP, MIN, MAX)
+			update()
+		end)
+
+		update()
+	]]
+end)
